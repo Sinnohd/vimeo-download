@@ -8,9 +8,9 @@ from tqdm import tqdm
 import sys
 import subprocess as sp
 import os
-import distutils.core
 import argparse
 from urllib.parse import urljoin
+from shutil import which
 import datetime
 
 import random
@@ -43,7 +43,7 @@ if OS_WIN:
     FFMPEG_BIN = 'ffmpeg.exe'
 else:
     try:
-        FFMPEG_BIN = distutils.spawn.find_executable("ffmpeg")
+        FFMPEG_BIN = which("ffmpeg")
     except AttributeError:
         FFMPEG_BIN = 'ffmpeg'
 
@@ -88,9 +88,11 @@ def download_video(base_url, content):
 
 
 def download_audio(base_url, content):
-    """Downloads the video portion of the content into the INSTANCE_TEMP folder"""
+    """Downloads the audio portion at max resolution of the content into the INSTANCE_TEMP folder"""
     result = True
-    audio = content[0]
+    bitrates = [(i, d['bitrate']) for (i, d) in enumerate(content)]
+    idx, _ = max(bitrates, key=lambda t: t[1])
+    audio = content[idx]
     audio_base_url = urljoin(base_url, audio['base_url'])
     print('audio base url:', audio_base_url)
 
@@ -162,7 +164,7 @@ if __name__ == "__main__":
     print("Output filename set to:", output_filename)
 
     if not args.skip_download:
-        master_json_url = args.url
+        master_json_url = args.url.strip()
 
         # get the content
         resp = requests.get(master_json_url)
